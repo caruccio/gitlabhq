@@ -1,4 +1,5 @@
 Gitlab::Application.routes.draw do
+scope  "/git" do
   #
   # Search
   #
@@ -223,4 +224,5 @@ Gitlab::Application.routes.draw do
   end
 
   root to: "dashboard#index"
+end
 end

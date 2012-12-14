@@ -1,6 +1,9 @@
 # Use this hook to configure devise mailer, warden hooks and so forth. The first
 # four configuration values can also be set straight in your models.
 Devise.setup do |config|
+
+  require 'openid/store/filesystem'
+
   # ==> Mailer Configuration
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class with default "from" parameter.
@@ -219,6 +222,7 @@ Devise.setup do |config|
   end
 
   gl.omniauth_providers.each do |gl_provider|
-    config.omniauth gl_provider['name'].to_sym, gl_provider['app_id'], gl_provider['app_secret']
+    #config.omniauth gl_provider['name'].to_sym, gl_provider['app_id'], gl_provider['app_secret']
+    config.omniauth :open_id, :store => OpenID::Store::Filesystem.new('/tmp/open_id'), :name => 'google', :identifier => 'https://www.google.com/accounts/o8/id', :require => 'omniauth-openid'
   end
 end

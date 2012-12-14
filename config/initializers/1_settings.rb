@@ -113,7 +113,7 @@ class Settings < Settingslogic
     end
 
     def default_projects_limit
-      app['default_projects_limit'] || 10
+      app['default_projects_limit'] || 1
     end
 
     def backup_path
