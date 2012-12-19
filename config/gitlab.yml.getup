@@ -42,7 +42,7 @@ app:
 omniauth:
   # Enable ability for users
   # to login via twitter, google ..
-  enabled: true
+  enabled: false
 
   # IMPORTANT! 
   # It allows user to login without having user account
