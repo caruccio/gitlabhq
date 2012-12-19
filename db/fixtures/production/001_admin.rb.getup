@@ -1,0 +1,19 @@
+admin = User.create(
+  :email => "admin@@@SERVER_FQDN@@",
+  :name => "Administrator",
+  :password => "@@GITLAB_ADMIN_PASSWORD@@",
+  :password_confirmation => "@@GITLAB_ADMIN_PASSWORD@@"
+)
+
+admin.projects_limit = 10000
+admin.admin = true
+admin.save!
+
+if admin.valid?
+puts %q[
+Administrator account created:
+
+login:    "admin@@@SERVER_FQDN@@"
+password: "@@GITLAB_ADMIN_PASSWORD@@"
+]
+end
