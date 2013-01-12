@@ -5,10 +5,10 @@ production:
   adapter: mysql2
   encoding: utf8
   reconnect: false
-  database: $GITLAB_DATABASE
+  database: @@GITLAB_DATABASE@@
   pool: 5
   username: gitlab
-  password: "$GITLAB_MYSQL_PASSWORD"
+  password: "@@GITLAB_MYSQL_PASSWORD@@"
   # host: localhost
   # socket: /tmp/mysql.sock
 
@@ -19,10 +19,10 @@ development:
   adapter: mysql2
   encoding: utf8
   reconnect: false
-  database: ${GITLAB_DATABASE}_development
+  database: @@GITLAB_DATABASE@@_development
   pool: 5
   username: root
-  password: "$GITLAB_MYSQL_PASSWORD_DEVEL"
+  password: "@@GITLAB_MYSQL_PASSWORD_DEVEL@@"
   # socket: /tmp/mysql.sock
 
 # Warning: The database defined as "test" will be erased and
