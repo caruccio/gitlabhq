@@ -67,7 +67,7 @@ omniauth:
 
 # Git Hosting configuration
 git_host:
-  admin_uri: @@GITLAB_ADMIN_USERNAME@@:gitolite-admin
+  admin_uri: git@localhost:gitolite-admin
   base_path: /home/git/repositories/
   hooks_path: /home/git/.gitolite/hooks/
   gitolite_admin_key: gitlab
