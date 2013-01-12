@@ -8,14 +8,14 @@
 
 # Web application specific settings
 web:
-  host: $SERVER_FQDN
+  host: @@SERVER_FQDN@@
   port: 80
   https: false
 
 # Email used for notification
 # about new issues, comments
 email:
-  from: notify@$SERVER_FQDN
+  from: notify@@@SERVER_FQDN@@
 
 # Application specific settings
 # Like default project limit for user etc
@@ -67,14 +67,14 @@ omniauth:
 
 # Git Hosting configuration
 git_host:
-  admin_uri: git@localhost:gitolite-admin
+  admin_uri: @@GITLAB_ADMIN_USERNAME@@:gitolite-admin
   base_path: /home/git/repositories/
   hooks_path: /home/git/.gitolite/hooks/
   gitolite_admin_key: gitlab
   git_user: git
   upload_pack: true
   receive_pack: true
-  host: $SERVER_FQDN
+  host: @@SERVER_FQDN@@
   # config_file: gitolite.conf
   # port: 22
 
