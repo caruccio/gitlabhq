@@ -16,7 +16,7 @@ class KeyObserver < ActiveRecord::Observer
         created_at: key.created_at,
       })
     rescue => ex
-      logger.error "SystemHook error: failed POST: #{ex}"
+      puts "SystemHook error: failed POST: #{ex}"
     end
     r
   end
@@ -37,7 +37,7 @@ class KeyObserver < ActiveRecord::Observer
         created_at: key.created_at,
       })
     rescue => ex
-      logger.error "SystemHook error: failed POST: #{ex}"
+      puts "SystemHook error: failed POST: #{ex}"
     end
     r
   end
