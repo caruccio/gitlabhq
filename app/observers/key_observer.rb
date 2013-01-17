@@ -5,8 +5,10 @@ class KeyObserver < ActiveRecord::Observer
     git_host.set_key(key.identifier, key.key, key.projects)
     SystemHook.all_hooks_fire({
       event_name: "key_save",
+      id: key.id,
       title: key.title,
       key: key.key,
+      user_id: key.user.user_id,
       owner_email: key.user.email,
       owner_name: key.user.name,
       projects: key.projects,
@@ -19,8 +21,10 @@ class KeyObserver < ActiveRecord::Observer
     git_host.remove_key(key.identifier, key.projects)
     SystemHook.all_hooks_fire({
       event_name: "key_destroy",
+      id: key.id,
       title: key.title,
       key: key.key,
+      user_id: key.user.user_id,
       owner_email: key.user.email,
       owner_name: key.user.name,
       projects: key.projects,
