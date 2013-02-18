@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import json
+import git
+from argparse import ArgumentParser
+
+try:
+	command = sys.argv[1]
+	if command == 'list':
+		project = sys.argv[2]
+	elif command == 'add':
+		project, remote, giturl = sys.argv[2:]
+	elif command == 'del':
+		project, remote = sys.argv[2:]
+	else:
+		raise ValueError('Invalid command: %s' % command)
+except (ValueError, TypeError):
+	print >>sys.stderr, 'Usage: %s [add|del] [ARGUMENTS...]' % sys.argv[0]
+	print >>sys.stderr, '   add PROJECT REMOTE GIT-URL' % sys.argv[0]
+	print >>sys.stderr, '   del PROJECT REMOTE' % sys.argv[0]
+	sys.exit(1)
+
+
+gitdir = os.path.expanduser('~git/repositories/%s.git' % project)
+os.chdir(gitdir)
+
+_empty_project = {
+	'project': '',
+	'remotes': [],
+}
+
+def load_config(project):
+	with open('getup-conf', 'a+') as fp:
+		try:
+			content = fp.read()
+			config = json.loads(content)
+			#print 'loaded config: %s' % fp.name
+		except ValueError, ex:
+			if content:
+				raise ValueError("Invalid config file format: %s", ex)
+			config = dict(_empty_project)
+			config['project'] = project
+
+	assert 'project' in config, 'Missing entry: project'
+	assert 'remotes' in config, 'Missing entry: remotes'
+	assert config['project'] == project, 'Mismatch project name'
+	return config
+
+def save_config(config):
+	assert isinstance(config, dict)
+	with open('getup-conf', 'w+') as fp:
+		#print 'saving config: %s' % fp.name
+		data = json.dumps(config)
+		fp.write(data)
+		#print 'config saved: %s' % data
+
+def add_remote(config, remote, giturl):
+	assert isinstance(config, dict)
+	remotes = config['remotes']
+	for r in remotes:
+		if remote == r['name']:
+			r['url'] = giturl
+			break
+	remotes.append({'name': remote, 'url': giturl})
+
+def del_remote(config, remote):
+	assert isinstance(config, dict)
+	remotes = config['remotes']
+	for i,r in enumerate(remotes):
+		if remote == r['name']:
+			remotes.pop(i)
+
+def list_remotes(config):
+	import StringIO
+	data = StringIO.StringIO()
+	json.dump(config, data, indent=3)
+	data.seek(0)
+	print data.read()
+
+config = load_config(project)
+if command == 'list':
+	list_remotes(config)
+	sys.exit(0)
+elif command == 'add':
+	add_remote(config, remote, giturl)
+	list_remotes(config)
+elif command == 'del':
+	del_remote(config, remote)
+save_config(config)
