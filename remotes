@@ -3,8 +3,8 @@
 import os
 import sys
 import json
-import git
-from argparse import ArgumentParser
+import StringIO
+import subprocess
 
 try:
 	command = sys.argv[1]
@@ -14,14 +14,18 @@ try:
 		project, remote, giturl = sys.argv[2:]
 	elif command == 'del':
 		project, remote = sys.argv[2:]
+	elif command == 'clone':
+		project, remote, giturl = sys.argv[2:]
 	else:
 		raise ValueError('Invalid command: %s' % command)
 except (ValueError, TypeError):
-	print >>sys.stderr, 'Usage: %s [add|del] [ARGUMENTS...]' % sys.argv[0]
-	print >>sys.stderr, '   add PROJECT REMOTE GIT-URL' % sys.argv[0]
-	print >>sys.stderr, '   del PROJECT REMOTE' % sys.argv[0]
+	print >> sys.stderr, 'Usage: %s COMMAND [ARGUMENTS...]' % sys.argv[0]
+	print >> sys.stderr, 'COMMANDs:'
+	print >> sys.stderr, '  list PROJECT REMOTE GIT-URL' % sys.argv[0]
+	print >> sys.stderr, '   add PROJECT REMOTE GIT-URL' % sys.argv[0]
+	print >> sys.stderr, '   del PROJECT REMOTE' % sys.argv[0]
+	print >> sys.stderr, ' clone PROJECT REMOTE GIT-URL' % sys.argv[0]
 	sys.exit(1)
-
 
 gitdir = os.path.expanduser('~git/repositories/%s.git' % project)
 os.chdir(gitdir)
@@ -30,6 +34,12 @@ _empty_project = {
 	'project': '',
 	'remotes': [],
 }
+
+def json_dump(obj):
+	data = StringIO.StringIO()
+	json.dump(obj, data, indent=3)
+	data.seek(0)
+	return data.read()
 
 def load_config(project):
 	with open('getup-conf', 'a+') as fp:
@@ -52,10 +62,13 @@ def save_config(config):
 	assert isinstance(config, dict)
 	with open('getup-conf', 'w+') as fp:
 		#print 'saving config: %s' % fp.name
-		data = json.dumps(config)
+		data = json_dump(config)
 		fp.write(data)
 		#print 'config saved: %s' % data
 
+#
+# Commands
+#
 def add_remote(config, remote, giturl):
 	assert isinstance(config, dict)
 	remotes = config['remotes']
@@ -68,24 +81,43 @@ def add_remote(config, remote, giturl):
 def del_remote(config, remote):
 	assert isinstance(config, dict)
 	remotes = config['remotes']
-	for i,r in enumerate(remotes):
+	for i, r in enumerate(remotes):
 		if remote == r['name']:
 			remotes.pop(i)
 
 def list_remotes(config):
-	import StringIO
-	data = StringIO.StringIO()
-	json.dump(config, data, indent=3)
-	data.seek(0)
-	print data.read()
+	print json_dump(config)
+
+def clone_remote(config, remote, giturl):
+	assert isinstance(config, dict)
+	cmd = 'git pull -s recursive -X theirs %s master' % giturl
+	proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	retcode = proc.wait()
+	if retcode != 0:
+		err = {
+			'retcode': retcode,
+			'stdout': proc.stdout.read(),
+			'stderr': proc.stderr.read(),
+		}
+		print json_dump(err)
+		sys.exit(retcode)
+		return # just in case ;-)
+
+	add_remote(config, remote, giturl)
+	list_remotes(config)
 
 config = load_config(project)
+
 if command == 'list':
 	list_remotes(config)
 	sys.exit(0)
-elif command == 'add':
+
+if command == 'add':
 	add_remote(config, remote, giturl)
 	list_remotes(config)
 elif command == 'del':
 	del_remote(config, remote)
+elif command == 'clone':
+	clone_remote(config, remote, giturl)
+
 save_config(config)
