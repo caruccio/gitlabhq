@@ -3,6 +3,10 @@
 import os
 import sys
 import json
+import errno
+import atexit
+import shutil
+import tempfile
 import StringIO
 import subprocess
 
@@ -27,9 +31,8 @@ except (ValueError, TypeError):
 	print >> sys.stderr, ' clone PROJECT REMOTE GIT-URL' % sys.argv[0]
 	sys.exit(1)
 
-gitdir = os.path.expanduser('~git/repositories/%s.git' % project)
-os.chdir(gitdir)
-
+getup_config_flename = 'getup-conf'
+git = os.environ['GIT_PATH'] if 'GIT_PATH' in os.environ else '/usr/bin/git'
 _empty_project = {
 	'project': '',
 	'remotes': [],
@@ -41,8 +44,32 @@ def json_dump(obj):
 	data.seek(0)
 	return data.read()
 
+def print_status(status=500, **kva):
+	print json_dump(dict(status=status, data=dict(**kva)))
+
+def project_dir(project):
+	return os.path.expanduser('~git/repositories/%s.git' % project)
+
+def config_path(project):
+	return os.path.join(project_dir(project), getup_config_flename)
+
+def chdir_project(project):
+	gitdir = project_dir(project)
+	try:
+		os.chdir(gitdir)
+	except OSError, ex:
+		print_status(status=404 if ex.errno == errno.ENOENT else 500, directory=gitdir)
+		sys.exit(2)
+
+def lock_config(project):
+	pass
+
+def release_config(project):
+	pass
+
 def load_config(project):
-	with open('getup-conf', 'a+') as fp:
+	with open(config_path(project), 'a+') as fp:
+		content = None
 		try:
 			content = fp.read()
 			config = json.loads(content)
@@ -60,7 +87,7 @@ def load_config(project):
 
 def save_config(config):
 	assert isinstance(config, dict)
-	with open('getup-conf', 'w+') as fp:
+	with open(config_path(project), 'w+') as fp:
 		#print 'saving config: %s' % fp.name
 		data = json_dump(config)
 		fp.write(data)
@@ -81,36 +108,53 @@ def add_remote(config, remote, giturl):
 def del_remote(config, remote):
 	assert isinstance(config, dict)
 	remotes = config['remotes']
+	before = len(remotes)
 	for i, r in enumerate(remotes):
 		if remote == r['name']:
 			remotes.pop(i)
+	if len(remotes) == before:
+		print_status(status=404, name=remote)
+	else:
+		list_remotes(config)
 
-def list_remotes(config):
-	print json_dump(config)
+def list_remotes(config, status=200):
+	print_status(status=status, config=config)
 
-def clone_remote(config, remote, giturl):
-	assert isinstance(config, dict)
-	cmd = 'git pull -s recursive -X theirs %s master' % giturl
-	proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def run_command(*arguments, **kvargs):
+	proc = subprocess.Popen(arguments, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kvargs)
 	retcode = proc.wait()
 	if retcode != 0:
-		err = {
-			'retcode': retcode,
-			'stdout': proc.stdout.read(),
-			'stderr': proc.stderr.read(),
-		}
-		print json_dump(err)
-		sys.exit(retcode)
-		return # just in case ;-)
+		print_status(status=500, command=arguments, retcode=retcode, stdout=proc.stdout.read(), stderr=proc.stderr.read())
+		sys.exit(2)
+	return proc
+
+def clone_remote(config, remote, giturl):
+	assert config and giturl and project, 'Invalid parameters (%s, %s, %s)' % (config, project, giturl)
+	if config['remotes']:
+		print_status(status=409, message='project already bound to remote')
+		sys.exit(2)
+
+	tempdir = tempfile.mkdtemp()
+	try:
+		run_command(git, 'clone', giturl, project, cwd=tempdir)
+		run_command(git, 'push', 'git@git.ops.getupcloud.com:%s.git' % project, 'master', cwd=os.path.join(tempdir, project))
+		shutil.rmtree(tempdir, ignore_errors=False)
+	except Exception, ex:
+		shutil.rmtree(tempdir, ignore_errors=False)
+		raise
+	# clone openshift app git and push it into gitlab project git
+	#run_command(git, 'pull', '-s', 'recursive', '-X', 'theirs', giturl, 'master', cwd=project_dir(project))
 
 	add_remote(config, remote, giturl)
 	list_remotes(config)
 
-config = load_config(project)
-
 if command == 'list':
-	list_remotes(config)
+	list_remotes(load_config(project))
 	sys.exit(0)
+
+lock_config(project)
+atexit.register(release_config, project)
+config = load_config(project)
 
 if command == 'add':
 	add_remote(config, remote, giturl)
