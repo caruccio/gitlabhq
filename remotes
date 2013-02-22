@@ -45,7 +45,10 @@ def json_dump(obj):
 	return data.read()
 
 def print_status(status=500, **kva):
-	print json_dump(dict(status=status, data=dict(**kva)))
+	if kva:
+		print json_dump({ 'status': status, 'data': kva })
+	else
+		print json_dump({ 'status': status })
 
 def project_dir(project):
 	return os.path.expanduser('~git/repositories/%s.git' % project)
@@ -115,7 +118,7 @@ def del_remote(config, remote):
 	if len(remotes) == before:
 		print_status(status=404, name=remote)
 	else:
-		list_remotes(config)
+		print_status(status=204)
 
 def list_remotes(config, status=200):
 	print_status(status=status, config=config)
@@ -146,7 +149,7 @@ def clone_remote(config, remote, giturl):
 	#run_command(git, 'pull', '-s', 'recursive', '-X', 'theirs', giturl, 'master', cwd=project_dir(project))
 
 	add_remote(config, remote, giturl)
-	list_remotes(config)
+	list_remotes(config, status=201)
 
 if command == 'list':
 	list_remotes(load_config(project))
@@ -158,7 +161,7 @@ config = load_config(project)
 
 if command == 'add':
 	add_remote(config, remote, giturl)
-	list_remotes(config)
+	list_remotes(config, status=201)
 elif command == 'del':
 	del_remote(config, remote)
 elif command == 'clone':
