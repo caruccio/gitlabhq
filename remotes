@@ -47,7 +47,7 @@ def json_dump(obj):
 def print_status(status=500, **kva):
 	if kva:
 		print json_dump({ 'status': status, 'data': kva })
-	else
+	else:
 		print json_dump({ 'status': status })
 
 def project_dir(project):
