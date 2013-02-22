@@ -135,7 +135,7 @@ def repo_is_empty():
 	arguments = [ git, 'log', '-1', '--pretty=format:%h' ]
 	proc = subprocess.Popen(arguments, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 	stdout, stderr = proc.communicate()
-	return not stdout
+	return proc.returncode != 0 or not stdout
 
 def clone_remote(config, remote, giturl):
 	assert config and giturl and project, 'Invalid parameters (%s, %s, %s)' % (config, project, giturl)
