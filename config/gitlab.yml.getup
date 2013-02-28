@@ -20,7 +20,7 @@ email:
 # Application specific settings
 # Like default project limit for user etc
 app:
-  default_projects_limit: 1
+  default_projects_limit: 50
   # backup_path: "/vol/backups"   # default: Rails.root + backups/
   # backup_keep_time: 604800      # default: 0 (forever) (in seconds)
   # disable_gravatar: true        # default: false - Disable user avatars from Gravatar.com
