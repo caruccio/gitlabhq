@@ -65,12 +65,12 @@ def chdir_project(project):
 		sys.exit(2)
 
 def lock_config(project):
-	pass
+	atexit.register(release_config, project)
 
 def release_config(project):
 	pass
 
-def load_config(project):
+def _load_config(project):
 	with open(config_path(project), 'a+') as fp:
 		content = None
 		try:
@@ -86,6 +86,11 @@ def load_config(project):
 	assert 'project' in config, 'Missing entry: project'
 	assert 'remotes' in config, 'Missing entry: remotes'
 	assert config['project'] == project, 'Mismatch project name'
+	return config
+
+def load_config(project):
+	config = _load_config(project)
+	lock_config(project)
 	return config
 
 def save_config(config):
@@ -137,8 +142,8 @@ def repo_is_empty():
 	stdout, stderr = proc.communicate()
 	return proc.returncode != 0 or not stdout
 
-def clone_remote(config, remote, giturl):
-	assert config and giturl and project, 'Invalid parameters (%s, %s, %s)' % (config, project, giturl)
+def clone_remote(remote, giturl):
+	assert giturl and project, 'Invalid parameters (%s, %s)' % (project, giturl)
 	if not repo_is_empty():
 		print_status(status=409, message='project repository not empty')
 		sys.exit(2)
@@ -152,23 +157,22 @@ def clone_remote(config, remote, giturl):
 	finally:
 		shutil.rmtree(tempdir, ignore_errors=False)
 
+	config = load_config(project)
 	add_remote(config, remote, giturl)
 	list_remotes(config, status=201)
 
 if command == 'list':
-	list_remotes(load_config(project))
+	list_remotes(_load_config(project))
 	sys.exit(0)
 
-lock_config(project)
-atexit.register(release_config, project)
-config = load_config(project)
-
-if command == 'add':
+if command == 'clone':
+	clone_remote(remote, giturl)
+elif command == 'add':
+	config = load_config(project)
 	add_remote(config, remote, giturl)
 	list_remotes(config, status=201)
 elif command == 'del':
+	config = load_config(project)
 	del_remote(config, remote)
-elif command == 'clone':
-	clone_remote(config, remote, giturl)
 
 save_config(config)
