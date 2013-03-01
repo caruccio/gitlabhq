@@ -160,13 +160,14 @@ def clone_remote(remote, giturl):
 	config = load_config(project)
 	add_remote(config, remote, giturl)
 	list_remotes(config, status=201)
+	return config
 
 if command == 'list':
 	list_remotes(_load_config(project))
 	sys.exit(0)
 
 if command == 'clone':
-	clone_remote(remote, giturl)
+	config = clone_remote(remote, giturl)
 elif command == 'add':
 	config = load_config(project)
 	add_remote(config, remote, giturl)
